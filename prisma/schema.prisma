@@ -9,3 +9,48 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Area {
+  id        Int      @id @default(autoincrement())
+  name      String
+  lat       Float
+  lng       Float
+  cameras   Camera[]
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Camera {
+  id        Int      @id @default(autoincrement())
+  cameraId  String   @unique
+  lat       Float
+  lng       Float
+  area      Area     @relation(fields: [areaId], references: [id])
+  areaId    Int
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model CameraImage {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime
+  imageUrl  String
+  width     Int
+  height    Int
+  createdAt DateTime @default(now())
+}
+
+model WeatherForecast {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime
+  forecast  String
+  createdAt DateTime @default(now())
+}
+
+model Transactions {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime
+  type      String
+  params    Json
+  createdAt DateTime @default(now())
+}
