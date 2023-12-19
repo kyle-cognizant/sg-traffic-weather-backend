@@ -10,13 +10,58 @@ This  application contains:
 
 Data is sourced from [data.gov.sg](https://data.gov.sg) and cached in a local database.
 
-## Traffic Cams API
+## Cameras API
 
-### GET `/traffic-cams`
-Lists of traffic camera locations in Singapore.
+### GET `/cameras?datetime=1693843200000`
+**Lists traffic camera locations in Singapore at the given date.**
 
-### GET `/traffic-cams/:id`
-Returns details about a specific traffic camera.
+```
+{ 
+    "cameras": [
+        {
+            "camera_id": "1001",
+            "area_name": "Bukit Batok"
+            "location": {
+                "latitude": 1.29531332,
+                "longitude": 103.871146
+            },
+            "timestamp": 1693843200000,
+            "image": "<image_url>",
+            "image_metadata": {
+                "height": 240,
+                "width": 320,
+                "md5": "9df1ef723ed80098a18fe8757f921fa9"
+            },
+        },
+        // ...
+    ],
+
+}
+```
+
+### GET `/cameras/:camera_id?datetime=1693843200000`
+Returns details about a specific traffic camera at the given date.
+
+```
+{ 
+    "camera": {
+        "camera_id": "1001",
+        "area_name": "Bukit Batok"
+        "location": {
+            "latitude": 1.29531332,
+            "longitude": 103.871146
+        },
+        "timestamp": 1693843200000,
+        "image": "<image_url>",
+        "image_metadata": {
+            "height": 240,
+            "width": 320,
+            "md5": "9df1ef723ed80098a18fe8757f921fa9"
+        },
+    },
+    "weather_forecast": "Partly Cloudy"
+}
+```
 
 ## Reports API
 
