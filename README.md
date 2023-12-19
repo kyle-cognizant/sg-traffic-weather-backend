@@ -114,7 +114,7 @@ $ npm run test:cov
 ## Notes
 
 ### Architecture & Design
-- Our system is designed to minimize API calls to data.gov.sg by caching as much data as possible. With our architecture, all historical data will still be available in the event that data.gov.sg is unreachable.
+- Our system is designed to minimize API calls to data.gov.sg by caching as much data as possible. With our architecture, all historical data will still be available in the event that data.gov.sg is unreachable. The drawback of this is that it requires more complicated database queries.
 - An indexer function runs when necessary, fetching data from data.gov.sg APIs, and storing it in Postgres (depending on requirements, Redis might be a better alternative for this). 
 - The database schema is designed to cater for growing requirements.
 - We only expose the necessary API endpoints and data for our frontend application and reporting requirements.
@@ -125,7 +125,9 @@ $ npm run test:cov
 - Split logic from Cameras service out into smaller modules.
 - Add Axios retries and throttling (wasn't sure how to do this with Nest).
 - Add rate limits to our API to prevent abuse.
+- Use .env vars for config stuff
 
 ### Assumptions
 - Cameras will never be moved or removed. (It's possible to handle these cases with added business logic; out of scope for this assignment).
+- The "area" associated with each camera can change over time as more areas are indexed in the DB.
 - Data at each timestamp is immutable.

@@ -6,10 +6,7 @@ export type Coordinates = {
 export type Camera = {
   timestamp: string
   image: string
-  location: {
-    latitude: number
-    longitude: number
-  }
+  location: Coordinates
   camera_id: string
   image_metadata: {
     height: number

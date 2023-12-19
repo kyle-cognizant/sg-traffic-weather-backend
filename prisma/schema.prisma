@@ -11,46 +11,50 @@ datasource db {
 }
 
 model Area {
-  id               Int               @id @default(autoincrement())
-  name             String
-  latitude         Float
-  longitude        Float
-  cameras          Camera[]
-  weatherForecasts WeatherForecast[]
-  updatedAt        DateTime          @updatedAt
-  createdAt        DateTime          @default(now())
+  id                Int               @id @default(autoincrement())
+  earliestTimestamp DateTime
+  name              String            @unique
+  latitude          Float
+  longitude         Float
+  cameras           Camera[]
+  weatherForecasts  WeatherForecast[]
+  updatedAt         DateTime          @updatedAt
+  createdAt         DateTime          @default(now())
 }
 
 model Camera {
-  id           Int           @id @default(autoincrement())
-  cameraId     String        @unique
-  latitude     Float
-  longitude    Float
-  area         Area          @relation(fields: [areaId], references: [id])
-  areaId       Int
-  cameraImages CameraImage[]
-  updatedAt    DateTime      @updatedAt
-  createdAt    DateTime      @default(now())
+  id                Int           @id @default(autoincrement())
+  earliestTimestamp DateTime
+  cameraId          String        @unique
+  latitude          Float
+  longitude         Float
+  cameraImages      CameraImage[]
+  area              Area          @relation(fields: [areaId], references: [id])
+  areaId            Int
+  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime      @default(now())
 }
 
 model CameraImage {
-  id        Int      @id @default(autoincrement())
-  timestamp DateTime
-  imageUrl  String
-  width     Int
-  height    Int
-  camera    Camera   @relation(fields: [cameraId], references: [id])
-  cameraId  Int
-  createdAt DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  timestamp      DateTime
+  imageTimestamp DateTime @unique
+  imageUrl       String
+  width          Int
+  height         Int
+  camera         Camera   @relation(fields: [cameraId], references: [id])
+  cameraId       Int
+  createdAt      DateTime @default(now())
 }
 
 model WeatherForecast {
-  id        Int      @id @default(autoincrement())
-  timestamp DateTime
-  forecast  String
-  area      Area     @relation(fields: [areaId], references: [id])
-  areaId    Int
-  createdAt DateTime @default(now())
+  id                Int      @id @default(autoincrement())
+  timestamp         DateTime
+  forecastTimestamp DateTime @unique
+  forecast          String
+  area              Area     @relation(fields: [areaId], references: [id])
+  areaId            Int
+  createdAt         DateTime @default(now())
 }
 
 model Transactions {
