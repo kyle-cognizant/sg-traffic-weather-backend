@@ -1,5 +1,6 @@
-import { Controller, Get, HttpException, Param, Req } from '@nestjs/common';
+import { Controller, Get, HttpException, HttpStatus, Param, Req } from '@nestjs/common';
 import { CamerasService } from './cameras.service';
+import { CameraDetails, CameraWithAreaName } from 'src/types';
 import { z } from 'zod';
 import { Request } from 'express';
 
@@ -11,26 +12,37 @@ export class CamerasController {
   async getCameras(
     @Req() request: Request
   ) {
-    const paramsSchema = z.object({
-      timestamp: z.number().min(0) // Change this to the max lookback period
-    })
+    try {
+      const paramsSchema = z.object({
+        timestamp: z.number().min(0) // Change this to the max lookback period
+      })
 
-    const validatedParams = paramsSchema.safeParse({
-      timestamp: Number(request.query.timestamp),
-    })
+      // TODO: Refactor into validation middleware
+      const validatedParams = paramsSchema.safeParse({
+        timestamp: Number(request.query.timestamp),
+      })
+            
+      if (!validatedParams.success) {
+        throw new HttpException(validatedParams.error.issues, 400)
+      }
+
+      const { timestamp } = validatedParams.data
     
-    console.log({ validatedParams })
-    
-    if (!validatedParams.success) {
-      throw new HttpException(validatedParams.error.issues, 400)
-    }
+      // Fetch from cache first. If no data is available,
+      // then run the indexer and refetch from cache.
+      // TODO: Refactor into caching middleware
+      let cameras: CameraWithAreaName[]
+      try {
+        cameras = await this.camerasService.fetchCameras(timestamp)
+      } catch (error) {
+        await this.camerasService.runIndexerForTimestamp(timestamp)
+        cameras = await this.camerasService.fetchCameras(timestamp)
+      }
 
-    const { timestamp } = validatedParams.data
-
-    const cameras = await this.camerasService.fetchCameras(timestamp)
-
-    return {
-      cameras,
+      return cameras
+    } catch (error) {
+      console.error(error)
+      throw new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
@@ -44,23 +56,29 @@ export class CamerasController {
       cameraId: z.string(),
     })
 
+    // TODO: Refactor into validation middleware
     const validatedParams = paramsSchema.safeParse({
       timestamp: Number(request.query.timestamp),
       cameraId: camera_id
     })
-    
-    console.log({ validatedParams })
-    
+        
     if (!validatedParams.success) { 
       throw new HttpException(validatedParams.error.issues, 400)
     }
 
     const { timestamp, cameraId } = validatedParams.data
 
-    const cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
+    // Fetch from cache first. If no data is available,
+    // then run the indexer and refetch from cache.
+    // TODO: Refactor into caching middleware
+    let cameraDetails: CameraDetails
+      try {
+        cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
+      } catch (error) {
+        await this.camerasService.runIndexerForTimestamp(timestamp)
+        cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
+      }
 
-    return {
-      ...cameraDetails
-    }
+    return cameraDetails
   }
 }

@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as dayjs from 'dayjs';
 import { CameraDetails, CameraWithAreaName, Coordinates, GovTrafficCamApiData, GovWeatherApiData } from 'src/types';
 import { PrismaService } from '../prisma/prisma.service';
@@ -24,6 +24,8 @@ export class CamerasService {
         area: true
       }
     })
+
+    if (cameras.length === 0) throw new Error('CAMERAS_NOT_FOUND')
 
     const cameraImages: CameraImage[] = []
     for (const camera of cameras) {
@@ -61,7 +63,7 @@ export class CamerasService {
   // fetch camera details from postgres
   public async fetchCameraDetails(timestamp: number, cameraId: string): Promise<CameraDetails> {
     const camera = await this.prisma.camera.findFirst({ where: { cameraId }, include: { area: true } })
-    if (!camera) throw new HttpException('CAMERA_NOT_FOUND', HttpStatus.NOT_FOUND)
+    if (!camera) throw new Error('CAMERA_NOT_FOUND')
 
     const [
       cameraImage,
@@ -71,8 +73,8 @@ export class CamerasService {
       this.prisma.weatherForecast.findFirst({ where: { areaId: camera.areaId } }), // TODO: find at given timestamp
     ])
 
-    if (!cameraImage) throw new HttpException('CAMERA_IMAGE_NOT_FOUND', HttpStatus.NOT_FOUND)
-    if (!weatherForecast) throw new HttpException('WEATHER_FORECAST_NOT_FOUND', HttpStatus.NOT_FOUND)
+    if (!cameraImage) throw new Error('CAMERA_IMAGE_NOT_FOUND')
+    if (!weatherForecast) throw new Error('WEATHER_FORECAST_NOT_FOUND')
 
     return {
       camera: {
@@ -94,11 +96,7 @@ export class CamerasService {
   }
 
   // indexes all data for a given timestamp
-  private async runIndexerForTimestamp({
-    timestamp
-  }: {
-    timestamp: number
-  }): Promise<any> {
+  public async runIndexerForTimestamp(timestamp: number): Promise<any> {
     const [
       trafficCamsApiData,
       weatherApiData,
