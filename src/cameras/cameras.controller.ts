@@ -46,17 +46,17 @@ export class CamerasController {
 
       try {
         this.logger.debug('Trying to fetch cached data from db.')
-        cameras = await this.camerasService.fetchCameras(timestamp)
+        cameras = await this.camerasService.fetchCamerasFromDb(timestamp)
         this.logger.debug('Returning cached data.')
       } catch (error) {
         this.logger.debug(error)
         this.logger.debug('No cached data found for requested timestamp. Indexing fresh data.')
-        const freshData = await this.camerasService.fetchAllDataForTimestamp(timestamp)
+        const freshData = await this.camerasService.fetchDataForTimestamp(timestamp)
 
         // TODO: Move cache writing to a messaging queue so user doesn't wait for DB calls.
         // TODO: Change this to just compute the result on-the-fly from freshData
         await this.camerasService.cacheAllDataToDb(timestamp, freshData)
-        cameras = await this.camerasService.fetchCameras(timestamp)
+        cameras = await this.camerasService.fetchCamerasFromDb(timestamp)
 
       }
 
@@ -110,17 +110,17 @@ export class CamerasController {
 
       try {
         this.logger.debug('Trying to fetch cached data from db.')
-        cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
+        cameraDetails = await this.camerasService.fetchCameraDetailsFromDb(timestamp, cameraId)
         this.logger.debug('Returning cached data.')
       } catch (error) {
         this.logger.debug(error)
         this.logger.debug('No cached data found for requested timestamp. Indexing fresh data.')
-        const freshData = await this.camerasService.fetchAllDataForTimestamp(timestamp)
+        const freshData = await this.camerasService.fetchDataForTimestamp(timestamp)
 
         // TODO: Move cache writing to a messaging queue so user doesn't wait for DB calls.
         // TODO: Change this to just compute the result on-the-fly from freshData
         await this.camerasService.cacheAllDataToDb(timestamp, freshData)
-        cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
+        cameraDetails = await this.camerasService.fetchCameraDetailsFromDb(timestamp, cameraId)
       }
 
       // TODO: Move to messaging queue

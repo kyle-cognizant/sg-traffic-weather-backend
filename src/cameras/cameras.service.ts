@@ -15,116 +15,9 @@ export class CamerasService {
 
   private readonly logger = new Logger(CamerasService.name);
 
-  // fetch list of cameras from postgres
-  public async fetchCameras(timestamp: number): Promise<CameraWithAreaName[]> {
-    this.logger.debug('Fetching cameras from db.')
-    const cameras = await this.prisma.camera.findMany({
-      where: {
-        earliestTimestamp: {
-          lte: new Date(timestamp)
-        }
-      },
-      include: {
-        area: true
-      }
-    })
-
-    if (cameras.length === 0) throw new Error('NO_CAMERAS_FOUND')
-
-    const cameraImages: CameraImage[] = []
-    for (const camera of cameras) {
-      // Do this sequentially because using Promise.all 
-      // will result in too many DB calls at once.
-      const cameraImage = await this.prisma.cameraImage.findFirst({
-        where: {
-          cameraId: camera.id, // TODO: find at given timestamp
-        }
-      })
-
-      if (!cameraImage) throw new Error('NO_CAMERA_IMAGE_FOUND')
-      cameraImages.push(cameraImage)
-    }
-
-    return cameras.map((camera, index) => {
-      const cameraImage = cameraImages[index]
-      return {
-        camera_id: camera.cameraId,
-        area_name: camera.area.name,
-        location: {
-          longitude: camera.longitude,
-          latitude: camera.latitude,
-        },
-        timestamp: this.getFormattedDate(cameraImage.imageTimestamp),
-        image: cameraImage.imageUrl,
-        image_metadata: {
-          width: cameraImage.width,
-          height: cameraImage.height,
-          md5: cameraImage.md5,
-        }
-      }
-    })
-  }
-
-  // fetch camera details from postgres
-  public async fetchCameraDetails(timestamp: number, cameraId: string): Promise<CameraDetails> {
-    this.logger.debug('Fetching camera details from db.')
-    const camera = await this.prisma.camera.findFirst({ where: { cameraId }, include: { area: true } })
-    if (!camera) throw new Error('NO_CAMERA_FOUND')
-
-    const [
-      cameraImage,
-      weatherForecast
-    ] = await Promise.all([
-      this.prisma.cameraImage.findFirst({ where: { cameraId: camera.id } }), // TODO: find at given timestamp 
-      this.prisma.weatherForecast.findFirst({ where: { areaId: camera.areaId } }), // TODO: find at given timestamp
-    ])
-
-    if (!cameraImage) throw new Error('NO_CAMERA_IMAGE_FOUND')
-    if (!weatherForecast) throw new Error('NO_WEATHER_FORECAST_FOUND')
-
-    return {
-      camera: {
-        camera_id: camera.cameraId,
-        area_name: camera.area.name,
-        location: {
-          longitude: camera.longitude,
-          latitude: camera.latitude,
-        },
-        timestamp: this.getFormattedDate(cameraImage.imageTimestamp),
-        image: cameraImage.imageUrl,
-        image_metadata: {
-          width: cameraImage.width,
-          height: cameraImage.height,
-          md5: cameraImage.md5,
-        }
-      },
-      weather_forecast: weatherForecast.forecast
-    }
-  }
-
-  public async cacheAllDataToDb(timestamp: number, data: IndexerResult): Promise<{ success: boolean }> {
-    // TODO: Do not start the indexer if it has already indexed the given timestamp.
-    this.logger.debug(`Caching data for timestamp ${timestamp}`)
-
-    let success: boolean
-    try {
-      // Do this sequentially, or else there will be a 
-      // race condition error while creating Areas.
-      await this.saveCameraImagesToDb(data, timestamp)
-      await this.saveWeatherForecastsToDb(data, timestamp)
-      success = true
-    } catch (error) {
-      this.logger.error(error)
-      success = false
-    }
-
-    this.logger.debug(`Caching data ${success ? 'succeeded' : 'failed'}`)
-
-    return { success }
-  }
 
   // fetches all data for a given timestamp
-  public async fetchAllDataForTimestamp(timestamp: number): Promise<IndexerResult> {
+  public async fetchDataForTimestamp(timestamp: number): Promise<IndexerResult> {
     this.logger.debug(`Fetching fresh data for timestamp ${timestamp}`)
 
     try {
@@ -199,6 +92,114 @@ export class CamerasService {
       this.logger.error(error)
       throw new Error('INDEXER_ERROR')
     }
+  }
+
+  // fetch list of cameras from postgres
+  public async fetchCamerasFromDb(timestamp: number): Promise<CameraWithAreaName[]> {
+    this.logger.debug('Fetching cameras from db.')
+    const cameras = await this.prisma.camera.findMany({
+      where: {
+        earliestTimestamp: {
+          lte: new Date(timestamp)
+        }
+      },
+      include: {
+        area: true
+      }
+    })
+
+    if (cameras.length === 0) throw new Error('NO_CAMERAS_FOUND')
+
+    const cameraImages: CameraImage[] = []
+    for (const camera of cameras) {
+      // Do this sequentially because using Promise.all 
+      // will result in too many DB calls at once.
+      const cameraImage = await this.prisma.cameraImage.findFirst({
+        where: {
+          cameraId: camera.id, // TODO: find at given timestamp
+        }
+      })
+
+      if (!cameraImage) throw new Error('NO_CAMERA_IMAGE_FOUND')
+      cameraImages.push(cameraImage)
+    }
+
+    return cameras.map((camera, index) => {
+      const cameraImage = cameraImages[index]
+      return {
+        camera_id: camera.cameraId,
+        area_name: camera.area.name,
+        location: {
+          longitude: camera.longitude,
+          latitude: camera.latitude,
+        },
+        timestamp: this.getFormattedDate(cameraImage.imageTimestamp),
+        image: cameraImage.imageUrl,
+        image_metadata: {
+          width: cameraImage.width,
+          height: cameraImage.height,
+          md5: cameraImage.md5,
+        }
+      }
+    })
+  }
+
+  // fetch camera details from postgres
+  public async fetchCameraDetailsFromDb(timestamp: number, cameraId: string): Promise<CameraDetails> {
+    this.logger.debug('Fetching camera details from db.')
+    const camera = await this.prisma.camera.findFirst({ where: { cameraId }, include: { area: true } })
+    if (!camera) throw new Error('NO_CAMERA_FOUND')
+
+    const [
+      cameraImage,
+      weatherForecast
+    ] = await Promise.all([
+      this.prisma.cameraImage.findFirst({ where: { cameraId: camera.id } }), // TODO: find at given timestamp 
+      this.prisma.weatherForecast.findFirst({ where: { areaId: camera.areaId } }), // TODO: find at given timestamp
+    ])
+
+    if (!cameraImage) throw new Error('NO_CAMERA_IMAGE_FOUND')
+    if (!weatherForecast) throw new Error('NO_WEATHER_FORECAST_FOUND')
+
+    return {
+      camera: {
+        camera_id: camera.cameraId,
+        area_name: camera.area.name,
+        location: {
+          longitude: camera.longitude,
+          latitude: camera.latitude,
+        },
+        timestamp: this.getFormattedDate(cameraImage.imageTimestamp),
+        image: cameraImage.imageUrl,
+        image_metadata: {
+          width: cameraImage.width,
+          height: cameraImage.height,
+          md5: cameraImage.md5,
+        }
+      },
+      weather_forecast: weatherForecast.forecast
+    }
+  }
+
+  public async cacheAllDataToDb(timestamp: number, data: IndexerResult): Promise<{ success: boolean }> {
+    // TODO: Do not start the indexer if it has already indexed the given timestamp.
+    this.logger.debug(`Caching data for timestamp ${timestamp}`)
+
+    let success: boolean
+    try {
+      // Do this sequentially, or else there will be a 
+      // race condition error while creating Areas.
+      await this.saveCameraImagesToDb(data, timestamp)
+      await this.saveWeatherForecastsToDb(data, timestamp)
+      success = true
+    } catch (error) {
+      this.logger.error(error)
+      success = false
+    }
+
+    this.logger.debug(`Caching data ${success ? 'succeeded' : 'failed'}`)
+
+    return { success }
   }
 
   private async saveWeatherForecastsToDb(data: IndexerResult, timestamp: number) {
