@@ -4,6 +4,7 @@ import * as dayjs from 'dayjs';
 import { CameraDetails, CameraWithAreaName, Coordinates, GovTrafficCamApiData, GovWeatherApiData } from 'src/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { CameraImage } from '@prisma/client';
+import { AxiosError } from 'axios';
 
 @Injectable()
 export class CamerasService {
@@ -96,7 +97,9 @@ export class CamerasService {
   }
 
   // indexes all data for a given timestamp
-  public async runIndexerForTimestamp(timestamp: number): Promise<any> {
+  public async runIndexerForTimestamp(timestamp: number): Promise<void> {
+    console.log('Running indexer.')
+
     const [
       trafficCamsApiData,
       weatherApiData,
@@ -146,36 +149,62 @@ export class CamerasService {
     })
 
     // TODO: Replace this with DB mutations
-    return {
-      areas,
-      weatherForecasts,
-      cameras,
-      cameraImages
-    }
+    console.log({
+      areas: areas.length,
+      weatherForecasts: weatherForecasts.length,
+      cameras: cameras.length,
+      cameraImages: cameraImages.length
+    })
   }
 
   // fetch data from data.gov.sg traffic cam api
   private async fetchGovTrafficCamApiData(timestamp: number): Promise<GovTrafficCamApiData> {
-    const date_time = this.getFormattedDate(timestamp)
+    try {
+      const date_time = this.getFormattedDate(timestamp)
+      const { data } = await this.httpService.axiosRef.get<GovTrafficCamApiData>(
+        `https://api.data.gov.sg/v1/transport/traffic-images?date_time=${date_time}`
+      )
 
-    const { data } = await this.httpService.axiosRef.get<GovTrafficCamApiData>(
-      `https://api.data.gov.sg/v1/transport/traffic-images?date_time=${date_time}`
-    )
-
-    // TODO: Add axios error handling
-    return data
+      return data
+    } catch (error) {
+      this.handleAxiosError(error)
+      throw new Error('FETCH_TRAFFIC_API_FAILED')
+    }
   }
 
   // fetch data from data.gov.sg weather forecast api
   private async fetchGovWeatherApiData(timestamp: number): Promise<GovWeatherApiData> {
-    const date_time = this.getFormattedDate(timestamp)
+    try {
+      const date_time = this.getFormattedDate(timestamp)
+      const { data } = await this.httpService.axiosRef.get<GovWeatherApiData>(
+        `https://api.data.gov.sg/v1/environment/2-hour-weather-forecast?date_time=${date_time}`
+      )
 
-    const { data } = await this.httpService.axiosRef.get<GovWeatherApiData>(
-      `https://api.data.gov.sg/v1/environment/2-hour-weather-forecast?date_time=${date_time}`
-    )
+      return data
+    } catch (error) {
+      this.handleAxiosError(error)
+      throw new Error('FETCH_WEATHER_API_FAILED')
+    }
+  }
 
-    // TODO: Add axios error handling
-    return data
+  private handleAxiosError(error: AxiosError) {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.log(error.response.data);
+      console.log(error.response.status);
+      console.log(error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+      // http.ClientRequest in node.js
+      console.log(error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.log('Error', error.message);
+    }
+
+    console.log(error.config);
   }
 
   // data.gov.sg api requires dates in a specific format
