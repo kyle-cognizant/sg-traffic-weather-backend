@@ -37,11 +37,11 @@ model Camera {
 
 model CameraImage {
   id             Int      @id @default(autoincrement())
-  timestamp      DateTime
-  imageTimestamp DateTime @unique
+  imageTimestamp DateTime
   imageUrl       String
   width          Int
   height         Int
+  md5            String   @unique
   camera         Camera   @relation(fields: [cameraId], references: [id])
   cameraId       Int
   createdAt      DateTime @default(now())
@@ -49,18 +49,19 @@ model CameraImage {
 
 model WeatherForecast {
   id                Int      @id @default(autoincrement())
-  timestamp         DateTime
-  forecastTimestamp DateTime @unique
+  forecastTimestamp DateTime
   forecast          String
   area              Area     @relation(fields: [areaId], references: [id])
   areaId            Int
   createdAt         DateTime @default(now())
+
+  @@unique([forecastTimestamp, areaId], name: "forecastTimestamp_areaId")
 }
 
 model Transactions {
-  id        Int      @id @default(autoincrement())
-  timestamp DateTime
-  type      String
-  params    Json
-  createdAt DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  queryTimestamp DateTime
+  type           String
+  params         Json
+  createdAt      DateTime @default(now())
 }

@@ -28,11 +28,11 @@ CREATE TABLE "Camera" (
 -- CreateTable
 CREATE TABLE "CameraImage" (
     "id" SERIAL NOT NULL,
-    "timestamp" TIMESTAMP(3) NOT NULL,
     "imageTimestamp" TIMESTAMP(3) NOT NULL,
     "imageUrl" TEXT NOT NULL,
     "width" INTEGER NOT NULL,
     "height" INTEGER NOT NULL,
+    "md5" TEXT NOT NULL,
     "cameraId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -42,7 +42,6 @@ CREATE TABLE "CameraImage" (
 -- CreateTable
 CREATE TABLE "WeatherForecast" (
     "id" SERIAL NOT NULL,
-    "timestamp" TIMESTAMP(3) NOT NULL,
     "forecastTimestamp" TIMESTAMP(3) NOT NULL,
     "forecast" TEXT NOT NULL,
     "areaId" INTEGER NOT NULL,
@@ -54,7 +53,7 @@ CREATE TABLE "WeatherForecast" (
 -- CreateTable
 CREATE TABLE "Transactions" (
     "id" SERIAL NOT NULL,
-    "timestamp" TIMESTAMP(3) NOT NULL,
+    "queryTimestamp" TIMESTAMP(3) NOT NULL,
     "type" TEXT NOT NULL,
     "params" JSONB NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -69,10 +68,10 @@ CREATE UNIQUE INDEX "Area_name_key" ON "Area"("name");
 CREATE UNIQUE INDEX "Camera_cameraId_key" ON "Camera"("cameraId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CameraImage_imageTimestamp_key" ON "CameraImage"("imageTimestamp");
+CREATE UNIQUE INDEX "CameraImage_md5_key" ON "CameraImage"("md5");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "WeatherForecast_forecastTimestamp_key" ON "WeatherForecast"("forecastTimestamp");
+CREATE UNIQUE INDEX "WeatherForecast_forecastTimestamp_areaId_key" ON "WeatherForecast"("forecastTimestamp", "areaId");
 
 -- AddForeignKey
 ALTER TABLE "Camera" ADD CONSTRAINT "Camera_areaId_fkey" FOREIGN KEY ("areaId") REFERENCES "Area"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

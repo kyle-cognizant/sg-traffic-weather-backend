@@ -15,11 +15,11 @@ export class CamerasController {
     @Req() request: Request
   ) {
     try {
+      // TODO: Refactor into validation middleware
       const paramsSchema = z.object({
         timestamp: z.number().min(0) // Change this to the max lookback period
       })
 
-      // TODO: Refactor into validation middleware
       const validatedParams = paramsSchema.safeParse({
         timestamp: Number(request.query.timestamp),
       })
@@ -29,17 +29,26 @@ export class CamerasController {
       }
 
       const { timestamp } = validatedParams.data
-      this.logger.debug({timestamp})
-
+      this.logger.debug(validatedParams.data)
+      
+      // TODO: Refactor into caching middleware
       // Fetch from cache first. If no data is available,
       // then run the indexer and refetch from cache.
-      // TODO: Refactor into caching middleware
       let cameras: CameraWithAreaName[]
+
       try {
+        this.logger.debug('Trying to fetch cached data from db.')
         cameras = await this.camerasService.fetchCameras(timestamp)
+        this.logger.debug('Found cached data.')
       } catch (error) {
-        this.logger.debug('No data found for requested timestamp.')
-        await this.camerasService.runIndexerForTimestamp(timestamp)
+        this.logger.debug(error)
+        this.logger.debug('No cached data found for requested timestamp. Indexing fresh data.')
+        const freshData = await this.camerasService.fetchAllDataForTimestamp(timestamp)
+
+        // TODO: Move cache writing to a messaging queue so user doesn't wait for DB calls.
+        await this.camerasService.cacheAllDataToDb(timestamp, freshData)
+
+        // TODO: Change this to just compute the result on-the-fly from freshData
         cameras = await this.camerasService.fetchCameras(timestamp)
       }
 
@@ -56,12 +65,12 @@ export class CamerasController {
     @Req() request: Request,
   ) {
     try {
+      // TODO: Refactor into validation middleware
       const paramsSchema = z.object({
         timestamp: z.number().min(0), // Change this to the max lookback period
         cameraId: z.string(),
       })
 
-      // TODO: Refactor into validation middleware
       const validatedParams = paramsSchema.safeParse({
         timestamp: Number(request.query.timestamp),
         cameraId: camera_id
@@ -72,19 +81,28 @@ export class CamerasController {
       }
 
       const { timestamp, cameraId } = validatedParams.data
-      this.logger.debug({timestamp, cameraId})
+      this.logger.debug(validatedParams.data)
 
+      // TODO: Refactor into caching middleware
       // Fetch from cache first. If no data is available,
       // then run the indexer and refetch from cache.
-      // TODO: Refactor into caching middleware
       let cameraDetails: CameraDetails
-        try {
-          cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
-        } catch (error) {
-          this.logger.debug('No data found for requested timestamp.')
-          await this.camerasService.runIndexerForTimestamp(timestamp)
-          cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
-        }
+
+      try {
+        this.logger.debug('Trying to fetch cached data from db.')
+        cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
+        this.logger.debug('Found cached data.')
+      } catch (error) {
+        this.logger.debug(error)
+        this.logger.debug('No cached data found for requested timestamp. Indexing fresh data.')
+        const freshData = await this.camerasService.fetchAllDataForTimestamp(timestamp)
+
+        // TODO: Move cache writing to a messaging queue so user doesn't wait for DB calls.
+        await this.camerasService.cacheAllDataToDb(timestamp, freshData)
+
+        // TODO: Change this to just compute the result on-the-fly from freshData
+        cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
+      }
 
       return cameraDetails
     } catch (error) {
