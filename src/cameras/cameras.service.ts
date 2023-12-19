@@ -167,7 +167,7 @@ export class CamerasService {
 
       return data
     } catch (error) {
-      this.handleAxiosError(error)
+      this.logAxiosError(error)
       throw new Error('FETCH_TRAFFIC_API_FAILED')
     }
   }
@@ -182,12 +182,12 @@ export class CamerasService {
 
       return data
     } catch (error) {
-      this.handleAxiosError(error)
+      this.logAxiosError(error)
       throw new Error('FETCH_WEATHER_API_FAILED')
     }
   }
 
-  private handleAxiosError(error: AxiosError) {
+  private logAxiosError(error: AxiosError) : void {
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
