@@ -142,11 +142,7 @@ export class CamerasService {
         longitude: area.label_location.longitude,
       }))
 
-      const weatherForecasts = weatherApiData.items[0].forecasts.map(({ area, forecast }) => ({
-        forecast,
-        area,
-      }))
-
+      const weatherForecasts = [ ...weatherApiData.items[0].forecasts ]
       const forecastTimestamp = weatherApiData.items[0].timestamp
 
       const {
