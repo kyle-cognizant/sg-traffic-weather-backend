@@ -29,7 +29,7 @@ export class CamerasController {
       }
 
       const { timestamp } = validatedParams.data
-      this.logger.debug(validatedParams.data)
+      this.logger.debug(`Requesting data for timestamp: ${timestamp}`)
       
       // TODO: Refactor into caching middleware
       // Fetch from cache first. If no data is available,
@@ -39,7 +39,7 @@ export class CamerasController {
       try {
         this.logger.debug('Trying to fetch cached data from db.')
         cameras = await this.camerasService.fetchCameras(timestamp)
-        this.logger.debug('Found cached data.')
+        this.logger.debug('Returning cached data.')
       } catch (error) {
         this.logger.debug(error)
         this.logger.debug('No cached data found for requested timestamp. Indexing fresh data.')
@@ -81,7 +81,7 @@ export class CamerasController {
       }
 
       const { timestamp, cameraId } = validatedParams.data
-      this.logger.debug(validatedParams.data)
+      this.logger.debug(`Requesting data for timestamp: ${timestamp} cameraId: ${cameraId}`)
 
       // TODO: Refactor into caching middleware
       // Fetch from cache first. If no data is available,
@@ -91,7 +91,7 @@ export class CamerasController {
       try {
         this.logger.debug('Trying to fetch cached data from db.')
         cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
-        this.logger.debug('Found cached data.')
+        this.logger.debug('Returning cached data.')
       } catch (error) {
         this.logger.debug(error)
         this.logger.debug('No cached data found for requested timestamp. Indexing fresh data.')

@@ -17,7 +17,7 @@ export class CamerasService {
 
   // fetch list of cameras from postgres
   public async fetchCameras(timestamp: number): Promise<CameraWithAreaName[]> {
-    this.logger.debug('fetchCameras')
+    this.logger.debug('Fetching cameras from db.')
     const cameras = await this.prisma.camera.findMany({
       where: {
         earliestTimestamp: {
@@ -67,7 +67,7 @@ export class CamerasService {
 
   // fetch camera details from postgres
   public async fetchCameraDetails(timestamp: number, cameraId: string): Promise<CameraDetails> {
-    this.logger.debug('fetchCameraDetails')
+    this.logger.debug('Fetching camera details from db.')
     const camera = await this.prisma.camera.findFirst({ where: { cameraId }, include: { area: true } })
     if (!camera) throw new Error('NO_CAMERA_FOUND')
 
@@ -104,24 +104,23 @@ export class CamerasService {
 
   public async cacheAllDataToDb(timestamp: number, data: IndexerResult): Promise<{ success: boolean }> {
     // TODO: Do not start the indexer if it has already indexed the given timestamp.
-    this.logger.debug(`Indexing data for timestamp ${timestamp}`)
+    this.logger.debug(`Caching data for timestamp ${timestamp}`)
 
     let success: boolean
     try {
-      await Promise.all([
-        this.saveCameraImagesToDb(data, timestamp),
-        this.saveWeatherForecastsToDb(data, timestamp),
-      ])
-
+      // Do this sequentially, or else there will be a 
+      // race condition error while creating Areas.
+      await this.saveCameraImagesToDb(data, timestamp)
+      await this.saveWeatherForecastsToDb(data, timestamp)
       success = true
     } catch (error) {
       this.logger.error(error)
       success = false
     }
 
-    return {
-      success
-    }
+    this.logger.debug(`Caching data ${success ? 'succeeded' : 'failed'}`)
+
+    return { success }
   }
 
   // fetches all data for a given timestamp
