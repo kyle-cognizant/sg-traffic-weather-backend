@@ -1,9 +1,11 @@
-# SG Traffic + Weather Backend
+<h1 align="center" style="">
+  📸🚦🌤<br/>
+  SG Traffic + Weather Backend
+</h1>
 
-## Description
 
-This backend application contains:
-- **Traffic Cams API** containing information about traffic cameras around Singapore. This API is consumed by [SG Traffic + Weather Frontend](https://github.com/kyle-cognizant/sg-traffic-weather-frontend).
+This  application contains:
+- **Traffic Cams API** containing information (weather and images) for traffic cameras around Singapore. This API is consumed by [SG Traffic + Weather Frontend](https://github.com/kyle-cognizant/sg-traffic-weather-frontend).
 - **Reports API** that returns data such as the most recent or top searches over a time period.
 
 Data is sourced from [data.gov.sg](https://data.gov.sg) and cached in a local database.
