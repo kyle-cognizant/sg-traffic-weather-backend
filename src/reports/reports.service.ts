@@ -10,6 +10,48 @@ export class ReportsService {
 
   private readonly logger = new Logger(ReportsService.name);
 
+  public async fetchRecentCameraLookups({
+    take = 10
+  } : {
+    take: number
+  }) {
+    this.logger.debug(`Fetching recent camera lookups`)
+    const recentTransactions = await this.prisma.transaction.findMany({
+      take,
+      where: {
+        path: {
+          startsWith: '/cameras/'
+        }
+      },
+    })
+
+    return recentTransactions
+  }
+
+  public async fetchTopQueriesWithinTimeRange({
+    take = 10,
+    start,
+    end,
+  } : {
+    take: number
+    start: Date
+    end: Date
+  }) {
+    // TODO
+  }
+
+  public async fetchTopPeriodWithinTimeRange({
+    periodMs = 1_000 * 60 * 60, // 1 hour
+    start,
+    end,
+  } : {
+    periodMs: number
+    start: Date
+    end: Date
+  }) {
+    // TODO
+  }
+
   public async createTransaction(transaction: Prisma.TransactionCreateInput) {
     this.logger.debug('Creating transaction')
 
