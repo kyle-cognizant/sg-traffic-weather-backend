@@ -11,26 +11,26 @@ datasource db {
 }
 
 model Area {
-  id              Int               @id @default(autoincrement())
-  name            String
-  lat             Float
-  lng             Float
-  cameras         Camera[]
-  updatedAt       DateTime          @updatedAt
-  createdAt       DateTime          @default(now())
-}
-
-model Camera {
   id               Int               @id @default(autoincrement())
-  cameraId         String            @unique
-  lat              Float
-  lng              Float
-  area             Area              @relation(fields: [areaId], references: [id])
-  areaId           Int
-  cameraImages     CameraImage[]
+  name             String
+  latitude         Float
+  longitude        Float
+  cameras          Camera[]
   weatherForecasts WeatherForecast[]
   updatedAt        DateTime          @updatedAt
   createdAt        DateTime          @default(now())
+}
+
+model Camera {
+  id           Int           @id @default(autoincrement())
+  cameraId     String        @unique
+  latitude     Float
+  longitude    Float
+  area         Area          @relation(fields: [areaId], references: [id])
+  areaId       Int
+  cameraImages CameraImage[]
+  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime      @default(now())
 }
 
 model CameraImage {
@@ -39,7 +39,7 @@ model CameraImage {
   imageUrl  String
   width     Int
   height    Int
-  camera    Camera     @relation(fields: [cameraId], references: [id])
+  camera    Camera   @relation(fields: [cameraId], references: [id])
   cameraId  Int
   createdAt DateTime @default(now())
 }
@@ -48,8 +48,8 @@ model WeatherForecast {
   id        Int      @id @default(autoincrement())
   timestamp DateTime
   forecast  String
-  camera    Camera     @relation(fields: [cameraId], references: [id])
-  cameraId  Int
+  area      Area     @relation(fields: [areaId], references: [id])
+  areaId    Int
   createdAt DateTime @default(now())
 }
 
