@@ -3,10 +3,11 @@
   SG Traffic + Weather Backend
 </h1>
 
+> This is my submission for a technical assessment as part of an interview process.
 
-This  application contains:
-- **Traffic Cams API** containing information (weather and images) for traffic cameras around Singapore. This API is consumed by [SG Traffic + Weather Frontend](https://github.com/kyle-cognizant/sg-traffic-weather-frontend).
-- **Reports API** that returns data such as the most recent or top searches over a time period.
+This application exposes two APIs:
+1. **Traffic Cams API** containing information (weather and images) for traffic cameras around Singapore. This API is consumed by [SG Traffic + Weather Frontend](https://github.com/kyle-cognizant/sg-traffic-weather-frontend).
+2. **Reports API** that returns data such as the most recent or top searches over a time period.
 
 Data is sourced from [data.gov.sg](https://data.gov.sg) and cached in a local database.
 
@@ -114,7 +115,8 @@ $ npm run test:cov
 ## Notes
 
 ### Architecture & Design
-- Our system is designed to minimize API calls to data.gov.sg by caching as much data as possible. With our architecture, all historical data will still be available in the event that data.gov.sg is unreachable. The drawback of this is that it requires more complicated database queries.
+- Our system is designed to minimize API calls to data.gov.sg by caching as much data as possible.
+- All historical data will still be available in the event that data.gov.sg is unreachable. The drawback of this is that it requires much more complicated database queries and mutations.
 - An indexer function runs when necessary, fetching data from data.gov.sg APIs, and storing it in Postgres (depending on requirements, Redis might be a better alternative for this). 
 - The database schema is designed to cater for growing requirements.
 - We only expose the necessary API endpoints and data for our frontend application and reporting requirements.
