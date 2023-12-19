@@ -97,64 +97,71 @@ export class CamerasService {
   }
 
   // indexes all data for a given timestamp
-  public async runIndexerForTimestamp(timestamp: number): Promise<void> {
+  public async runIndexerForTimestamp(timestamp: number): Promise<{ success: boolean }> {
     console.log('Running indexer.')
 
-    const [
-      trafficCamsApiData,
-      weatherApiData,
-    ] = await Promise.all([
-      this.fetchGovTrafficCamApiData(timestamp),
-      this.fetchGovWeatherApiData(timestamp),
-    ])
+    try {
+      const [
+        trafficCamsApiData,
+        weatherApiData,
+      ] = await Promise.all([
+        this.fetchGovTrafficCamApiData(timestamp),
+        this.fetchGovWeatherApiData(timestamp),
+      ])
 
-    const areas = weatherApiData.area_metadata.map(area => ({
-      name: area.name,
-      latitude: area.label_location.latitude,
-      longitude: area.label_location.longitude,
-    }))
+      const areas = weatherApiData.area_metadata.map(area => ({
+        name: area.name,
+        latitude: area.label_location.latitude,
+        longitude: area.label_location.longitude,
+      }))
 
-    const weatherForecasts = weatherApiData.items[0].forecasts.map(({ area, forecast }) => ({
-      timestamp,
-      forecast,
-      area,
-    }))
+      const weatherForecasts = weatherApiData.items[0].forecasts.map(({ area, forecast }) => ({
+        timestamp,
+        forecast,
+        area,
+      }))
 
-    const {
-      cameras,
-      cameraImages
-    } = trafficCamsApiData.items[0].cameras.reduce((results, camera) => {
-      return {
-        cameras: [
-          ...results.cameras,
-          {
-            cameraId: camera.camera_id,
-            latitude: camera.location.latitude,
-            longitude: camera.location.longitude,
-          }
-        ],
-        cameraImages: [
-          ...results.cameraImages,
-          {
-            timestamp: camera.timestamp,
-            imageUrl: camera.image,
-            width: camera.image_metadata.width,
-            height: camera.image_metadata.height,
-          }
-        ],
-      }
-    }, {
-      cameras: [],
-      cameraImages: [],
-    })
+      const {
+        cameras,
+        cameraImages
+      } = trafficCamsApiData.items[0].cameras.reduce((results, camera) => {
+        return {
+          cameras: [
+            ...results.cameras,
+            {
+              cameraId: camera.camera_id,
+              latitude: camera.location.latitude,
+              longitude: camera.location.longitude,
+            }
+          ],
+          cameraImages: [
+            ...results.cameraImages,
+            {
+              timestamp: camera.timestamp,
+              imageUrl: camera.image,
+              width: camera.image_metadata.width,
+              height: camera.image_metadata.height,
+            }
+          ],
+        }
+      }, {
+        cameras: [],
+        cameraImages: [],
+      })
 
-    // TODO: Replace this with DB mutations
-    console.log({
-      areas: areas.length,
-      weatherForecasts: weatherForecasts.length,
-      cameras: cameras.length,
-      cameraImages: cameraImages.length
-    })
+      // TODO: Replace this with DB mutations
+      console.log({
+        areas: areas.length,
+        weatherForecasts: weatherForecasts.length,
+        cameras: cameras.length,
+        cameraImages: cameraImages.length
+      })
+
+      return { success: true }
+    } catch (error) {
+      console.error(error)
+      return { success: false }
+    }
   }
 
   // fetch data from data.gov.sg traffic cam api
@@ -187,7 +194,7 @@ export class CamerasService {
     }
   }
 
-  private logAxiosError(error: AxiosError) : void {
+  private logAxiosError(error: AxiosError): void {
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
