@@ -58,10 +58,11 @@ model WeatherForecast {
   @@unique([forecastTimestamp, areaId], name: "forecastTimestamp_areaId")
 }
 
-model Transactions {
+model Transaction {
   id             Int      @id @default(autoincrement())
+  clientId       String
   queryTimestamp DateTime
-  type           String
+  path           String
   params         Json
   createdAt      DateTime @default(now())
 }

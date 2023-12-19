@@ -1,12 +1,16 @@
-import { Logger, Controller, Get, HttpException, HttpStatus, Param, Req } from '@nestjs/common';
-import { CamerasService } from './cameras.service';
+import { Controller, Get, HttpException, HttpStatus, Logger, Param, Req } from '@nestjs/common';
+import { Request } from 'express';
+import { ReportsService } from 'src/reports/reports.service';
 import { CameraDetails, CameraWithAreaName } from 'src/types';
 import { z } from 'zod';
-import { Request } from 'express';
+import { CamerasService } from './cameras.service';
 
 @Controller('cameras')
 export class CamerasController {
-  constructor(private readonly camerasService: CamerasService) { }
+  constructor(
+    private readonly camerasService: CamerasService,
+    private readonly reportsService: ReportsService,
+  ) { }
 
   private readonly logger = new Logger(CamerasService.name);
 
@@ -15,6 +19,10 @@ export class CamerasController {
     @Req() request: Request
   ) {
     try {
+      // TODO: Use sessions for client fingerprinting.
+      // TODO: Move clientId and createTransaction into middleware.
+      const clientId = `${request.ip}_${request.headers['user-agent']}`
+
       // TODO: Refactor into validation middleware
       const paramsSchema = z.object({
         timestamp: z.number().min(0) // Change this to the max lookback period
@@ -46,11 +54,19 @@ export class CamerasController {
         const freshData = await this.camerasService.fetchAllDataForTimestamp(timestamp)
 
         // TODO: Move cache writing to a messaging queue so user doesn't wait for DB calls.
-        await this.camerasService.cacheAllDataToDb(timestamp, freshData)
-
         // TODO: Change this to just compute the result on-the-fly from freshData
+        await this.camerasService.cacheAllDataToDb(timestamp, freshData)
         cameras = await this.camerasService.fetchCameras(timestamp)
+
       }
+
+      // TODO: Move to messaging queue
+      await this.reportsService.createTransaction({
+        clientId,
+        queryTimestamp: new Date(timestamp),
+        path: request.path,
+        params: { }
+      })
 
       return cameras
     } catch (error) {
@@ -65,6 +81,10 @@ export class CamerasController {
     @Req() request: Request,
   ) {
     try {
+      // TODO: Use sessions for client fingerprinting.
+      // TODO: Move clientId and createTransaction into middleware.
+      const clientId = `${request.ip}_${request.headers['user-agent']}`
+
       // TODO: Refactor into validation middleware
       const paramsSchema = z.object({
         timestamp: z.number().min(0), // Change this to the max lookback period
@@ -98,11 +118,24 @@ export class CamerasController {
         const freshData = await this.camerasService.fetchAllDataForTimestamp(timestamp)
 
         // TODO: Move cache writing to a messaging queue so user doesn't wait for DB calls.
-        await this.camerasService.cacheAllDataToDb(timestamp, freshData)
-
         // TODO: Change this to just compute the result on-the-fly from freshData
+        await this.camerasService.cacheAllDataToDb(timestamp, freshData)
         cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
       }
+
+      // TODO: Move to messaging queue
+      await this.reportsService.createTransaction({
+        clientId,
+        queryTimestamp: new Date(timestamp),
+        path: request.path,
+        params: { 
+          latitude: cameraDetails.camera.location.latitude,
+          longitude: cameraDetails.camera.location.longitude,
+          weather_forecast: cameraDetails.weather_forecast,
+          area_name: cameraDetails.camera.area_name,
+          md5: cameraDetails.camera.image_metadata.md5,
+        }
+      })
 
       return cameraDetails
     } catch (error) {
