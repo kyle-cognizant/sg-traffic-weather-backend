@@ -110,3 +110,22 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+
+## Notes
+
+### Architecture & Design
+- Our system is designed to minimize API calls to data.gov.sg by caching as much data as possible. With our architecture, all historical data will still be available in the event that data.gov.sg is unreachable.
+- An indexer function runs when necessary, fetching data from data.gov.sg APIs, and storing it in Postgres (depending on requirements, Redis might be a better alternative for this). 
+- The database schema is designed to cater for growing requirements.
+- We only expose the necessary API endpoints and data for our frontend application and reporting requirements.
+- In a real world situation, we would run the indexer to seed our DB with historical data, then set up a recurring job to trigger the indexer at short intervals.
+- It is easy to extend this app to including things like PSI data, temperature, etc using the relevant APIs. If we want to display charts, consider using a time-series database.
+
+### Possible Enhancements
+- Split logic from Cameras service out into smaller modules.
+- Add Axios retries and throttling (wasn't sure how to do this with Nest).
+- Add rate limits to our API to prevent abuse.
+
+### Assumptions
+- Cameras will never be moved or removed. (It's possible to handle these cases with added business logic; out of scope for this assignment).
+- Data at each timestamp is immutable.
