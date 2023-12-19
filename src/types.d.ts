@@ -4,22 +4,22 @@ export type Coordinates = {
 }
 
 export type Camera = {
-  timestamp: string
-  image: string
-  location: Coordinates
   camera_id: string
+  location: Coordinates
+  image: string
   image_metadata: {
     height: number
     width: number
-    md5: string
+    md5?: string
   }
+  timestamp: string
 }
 
 export type CameraWithAreaName = Camera & {
   area_name: string
 }
 
-export type CameraDetails {
+export type CameraDetails = {
   camera: CameraWithAreaName
   weather_forecast: string
 }

@@ -28,7 +28,8 @@
     "axios": "^1.6.2",
     "dayjs": "^1.11.10",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
