@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Logger, Injectable } from '@nestjs/common';
 import * as dayjs from 'dayjs';
 import { CameraDetails, CameraWithAreaName, Coordinates, GovTrafficCamApiData, GovWeatherApiData } from 'src/types';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,6 +12,8 @@ export class CamerasService {
     private readonly httpService: HttpService,
     private prisma: PrismaService
   ) { }
+
+  private readonly logger = new Logger(CamerasService.name);
 
   // fetch list of cameras from postgres
   public async fetchCameras(timestamp: number): Promise<CameraWithAreaName[]> {
@@ -98,7 +100,7 @@ export class CamerasService {
 
   // indexes all data for a given timestamp
   public async runIndexerForTimestamp(timestamp: number): Promise<{ success: boolean }> {
-    console.log('Running indexer.')
+    this.logger.debug('Running indexer.')
 
     try {
       const [
@@ -150,7 +152,7 @@ export class CamerasService {
       })
 
       // TODO: Replace this with DB mutations
-      console.log({
+      this.logger.debug({
         areas: areas.length,
         weatherForecasts: weatherForecasts.length,
         cameras: cameras.length,
@@ -159,7 +161,7 @@ export class CamerasService {
 
       return { success: true }
     } catch (error) {
-      console.error(error)
+      this.logger.error(error)
       return { success: false }
     }
   }
@@ -198,20 +200,20 @@ export class CamerasService {
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
-      console.log(error.response.data);
-      console.log(error.response.status);
-      console.log(error.response.headers);
+      this.logger.log(error.response.data);
+      this.logger.log(error.response.status);
+      this.logger.log(error.response.headers);
     } else if (error.request) {
       // The request was made but no response was received
       // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
       // http.ClientRequest in node.js
-      console.log(error.request);
+      this.logger.log(error.request);
     } else {
       // Something happened in setting up the request that triggered an Error
-      console.log('Error', error.message);
+      this.logger.log('Error', error.message);
     }
 
-    console.log(error.config);
+    this.logger.log(error.config);
   }
 
   // data.gov.sg api requires dates in a specific format

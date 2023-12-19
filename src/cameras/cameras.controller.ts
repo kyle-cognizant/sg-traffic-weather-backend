@@ -1,4 +1,4 @@
-import { Controller, Get, HttpException, HttpStatus, Param, Req } from '@nestjs/common';
+import { Logger, Controller, Get, HttpException, HttpStatus, Param, Req } from '@nestjs/common';
 import { CamerasService } from './cameras.service';
 import { CameraDetails, CameraWithAreaName } from 'src/types';
 import { z } from 'zod';
@@ -7,6 +7,8 @@ import { Request } from 'express';
 @Controller('cameras')
 export class CamerasController {
   constructor(private readonly camerasService: CamerasService) { }
+
+  private readonly logger = new Logger(CamerasService.name);
 
   @Get()
   async getCameras(
@@ -27,7 +29,7 @@ export class CamerasController {
       }
 
       const { timestamp } = validatedParams.data
-      console.log({timestamp})
+      this.logger.debug({timestamp})
 
       // Fetch from cache first. If no data is available,
       // then run the indexer and refetch from cache.
@@ -36,14 +38,14 @@ export class CamerasController {
       try {
         cameras = await this.camerasService.fetchCameras(timestamp)
       } catch (error) {
-        console.log('No data found for requested timestamp.')
+        this.logger.debug('No data found for requested timestamp.')
         await this.camerasService.runIndexerForTimestamp(timestamp)
         cameras = await this.camerasService.fetchCameras(timestamp)
       }
 
       return cameras
     } catch (error) {
-      console.error(error)
+      this.logger.error(error)
       throw new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -70,7 +72,7 @@ export class CamerasController {
       }
 
       const { timestamp, cameraId } = validatedParams.data
-      console.log({timestamp, cameraId})
+      this.logger.debug({timestamp, cameraId})
 
       // Fetch from cache first. If no data is available,
       // then run the indexer and refetch from cache.
@@ -79,14 +81,14 @@ export class CamerasController {
         try {
           cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
         } catch (error) {
-          console.log('No data found for requested timestamp.')
+          this.logger.debug('No data found for requested timestamp.')
           await this.camerasService.runIndexerForTimestamp(timestamp)
           cameraDetails = await this.camerasService.fetchCameraDetails(timestamp, cameraId)
         }
 
       return cameraDetails
     } catch (error) {
-      console.error(error)
+      this.logger.error(error)
       throw new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
