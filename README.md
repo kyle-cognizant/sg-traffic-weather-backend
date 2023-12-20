@@ -83,7 +83,17 @@ Returns period where there are most searches performed
 ## Installation
 
 ```bash
+# install dependencies
 $ npm install
+
+# copy env vars for development
+$ cp .env.example .env
+
+# start docker postgres container
+$ docker run --name postgres-db -e POSTGRES_PASSWORD=docker -p 5432:5432 -d postgres 
+
+# run db migrations
+$ npx prisma migrate dev
 ```
 
 ## Running the app
@@ -128,6 +138,7 @@ $ npm run test:cov
 - Add Axios retries and throttling (wasn't sure how to do this with Nest).
 - Add rate limits to our API to prevent abuse.
 - Use .env vars for config stuff
+- Add error handling for dates that fall out of range
 
 ### Assumptions
 - Cameras will never be moved or removed. (It's possible to handle these cases with added business logic; out of scope for this assignment).
