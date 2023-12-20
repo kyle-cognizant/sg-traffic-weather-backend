@@ -23,6 +23,9 @@ export class ReportsService {
           startsWith: '/cameras/'
         }
       },
+      orderBy: {
+        createdAt: "desc"
+      }
     })
 
     return recentTransactions
