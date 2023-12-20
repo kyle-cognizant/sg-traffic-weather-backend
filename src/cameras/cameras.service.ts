@@ -3,7 +3,7 @@ import { Logger, Injectable } from '@nestjs/common';
 import * as dayjs from 'dayjs';
 import { Area, CameraDetails, CameraWithAreaName, Coordinates, GovTrafficCamApiData, GovWeatherApiData, IndexerResult, WeatherForecast } from 'src/types';
 import { PrismaService } from '../prisma/prisma.service';
-import { CameraImage } from '@prisma/client';
+import { CameraImage, Prisma } from '@prisma/client';
 import { AxiosError } from 'axios';
 
 @Injectable()
@@ -76,9 +76,6 @@ export class CamerasService {
         cameraImages: cameraImages.length,
         forecastTimestamp
       })
-
-      // TODO: !!! Update earliestTimestamp for areas
-      // TODO: !!! Update earliestTimestamp for cameras
 
       return {
         areas,
@@ -211,12 +208,14 @@ export class CamerasService {
       const area = areas.find(area => area.name === weatherForecast.area)
       if (!area) throw new Error('NO_AREA_FOUND')
 
-      const createParams = {
+      const createParams : Prisma.WeatherForecastCreateInput = {
         forecast: weatherForecast.forecast,
         area: {
           connectOrCreate: {
             where: {
-              name: area.name
+              name: area.name,
+              latitude: area.latitude,
+              longitude: area.longitude,
             },
             create: {
               name: area.name,
@@ -232,6 +231,32 @@ export class CamerasService {
       const newForecast = await this.prisma.weatherForecast.create({
         data: createParams,
       })
+    }
+
+    // Update earliestTimestamp for areas
+    // TODO: Optimize this
+    for (const area of areas) {
+      const areaFromDb = await this.prisma.area.findFirst({
+        where: {
+          name: area.name
+        }
+      })
+
+      if (!areaFromDb) return;
+
+      const earliestTimestampFromDb = areaFromDb.earliestTimestamp
+      if (new Date(timestamp) < new Date(earliestTimestampFromDb)) {
+        await this.prisma.area.update({
+          where: {
+            name: area.name,
+            latitude: area.latitude,
+            longitude: area.longitude,
+          },
+          data: {
+            earliestTimestamp: new Date(timestamp)
+          }
+        })
+      }
     }
 
     this.logger.debug('Done upserting Areas and WeatherForecasts')
@@ -285,6 +310,30 @@ export class CamerasService {
         update: params,
         create: params
       })
+    }
+
+    // Update earliestTimestamp for cameras
+    // TODO: Optimize this
+    for (const camera of cameras) {
+      const cameraFromDb = await this.prisma.camera.findFirst({
+        where: {
+          cameraId: camera.cameraId
+        }
+      })
+
+      if (!cameraFromDb) return;
+
+      const earliestTimestampFromDb = cameraFromDb.earliestTimestamp
+      if (new Date(timestamp) < new Date(earliestTimestampFromDb)) {
+        await this.prisma.camera.update({
+          where: {
+            cameraId: camera.cameraId
+          },
+          data: {
+            earliestTimestamp: new Date(timestamp)
+          }
+        })
+      }
     }
 
     this.logger.debug('Done upserting Cameras and CameraImages')

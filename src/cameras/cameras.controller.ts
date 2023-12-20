@@ -57,7 +57,6 @@ export class CamerasController {
         // TODO: Change this to just compute the result on-the-fly from freshData
         await this.camerasService.cacheAllDataToDb(timestamp, freshData)
         cameras = await this.camerasService.fetchCamerasFromDb(timestamp)
-
       }
 
       // TODO: Move to messaging queue
