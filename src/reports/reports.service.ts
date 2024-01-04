@@ -40,7 +40,28 @@ export class ReportsService {
     start: Date
     end: Date
   }) {
-    // TODO
+    this.logger.debug(`Fetching top queries between ${start} and ${end}`)
+    const allQueriesInPeriod = await this.prisma.transaction.findMany({
+      take,
+      where: {
+        createdAt: {
+          lte: end,
+          gte: start
+        }
+      }
+    })
+
+    const topQueriesInPeriod = allQueriesInPeriod.reduce((acc, curr) => {
+      const queryHash = JSON.stringify(curr.params)
+      
+      return {
+        ...acc,
+        [queryHash]: acc[queryHash] + 1 || 1
+      }
+    }, {} as Record<string, number>)
+
+    const queries : Prisma.JsonValue[] = Object.keys(topQueriesInPeriod).map(s => JSON.parse(s))
+    return queries
   }
 
   public async fetchTopPeriodWithinTimeRange({
